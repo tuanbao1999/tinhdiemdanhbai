@@ -342,6 +342,10 @@ body {
   gap: 10px;
   box-shadow: 0 -16px 40px rgba(0, 0, 0, 0.8);
 }
+ 
+.round-modal {
+  overflow-y: auto;
+}
 
 .archive-modal {
   width: 100%;
@@ -444,6 +448,12 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  position: sticky;
+  top: 0;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  background: #07130c;
+  z-index: 2;
 }
 
 .round-modal-header h2 {
