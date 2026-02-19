@@ -732,14 +732,7 @@ export function App() {
               >
                 ←
               </button>
-              <h2>{isEditingLastRound ? 'Sửa vòng cuối' : 'Thêm vòng'}</h2>
-              <button
-                className="save-text-button"
-                type="button"
-                onClick={handleSaveRound}
-              >
-                {isEditingLastRound ? 'Cập nhật' : 'Lưu'}
-              </button>
+              <h2>Thêm / sửa vòng</h2>
             </header>
 
             <div className="special-toggle">
@@ -749,6 +742,13 @@ export function App() {
                   Chọn nhất / nhì / ba / bét cho từng người
                 </div>
               </div>
+              <button
+                className="save-text-button"
+                type="button"
+                onClick={handleSaveRound}
+              >
+                {isEditingLastRound ? 'Cập nhật' : 'Lưu'}
+              </button>
             </div>
 
             <p className="scores-label">Scores</p>
