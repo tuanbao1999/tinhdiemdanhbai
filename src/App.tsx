@@ -36,6 +36,7 @@ type Rules = {
   toiTrang: number
   dut3Bich: number
   otherPenalty: number
+  scoreLimit: number | null // null = không giới hạn
 }
 
 type View = 'roomList' | 'createRoom' | 'table'
@@ -62,6 +63,7 @@ const DEFAULT_RULES: Rules = {
   toiTrang: 6,
   dut3Bich: 9,
   otherPenalty: -3,
+  scoreLimit: 51, // Mặc định giới hạn 51 điểm
 }
 
 export function App() {
@@ -85,6 +87,9 @@ export function App() {
   const [isAddingRound, setIsAddingRound] = useState(false)
   const [isEditingLastRound, setIsEditingLastRound] = useState(false)
   const [draft, setDraft] = useState<DraftRound>({})
+  
+  // Hiệu ứng pháo bông
+  const [fireworks, setFireworks] = useState<{ id: number; playerName: string }[]>([])
 
   const activeRoom = rooms.find(r => r.id === activeRoomId) || null
 
@@ -96,7 +101,15 @@ export function App() {
     try {
       const parsed = JSON.parse(raw) as StoredState
       if (Array.isArray(parsed.rooms)) {
-        setRooms(parsed.rooms)
+        // Đảm bảo các room cũ có scoreLimit mặc định
+        const normalizedRooms = parsed.rooms.map(room => ({
+          ...room,
+          rules: {
+            ...room.rules,
+            scoreLimit: room.rules.scoreLimit ?? null,
+          },
+        }))
+        setRooms(normalizedRooms)
         setActiveRoomId(parsed.activeRoomId ?? null)
         setView(parsed.activeRoomId ? 'table' : 'roomList')
       }
@@ -137,6 +150,17 @@ export function App() {
     setRooms(prev => [...prev, newRoom])
     setActiveRoomId(id)
     setView('table')
+  }
+
+  const handleDeleteRoom = (roomId: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Ngăn click vào room card
+    if (window.confirm('Bạn có chắc muốn xóa bàn chơi này?')) {
+      setRooms(prev => prev.filter(r => r.id !== roomId))
+      if (activeRoomId === roomId) {
+        setActiveRoomId(null)
+        setView('roomList')
+      }
+    }
   }
 
   const openAddRound = () => {
@@ -333,6 +357,34 @@ export function App() {
     )
   }
 
+  const triggerFireworks = (playerName: string) => {
+    const id = Date.now()
+    setFireworks(prev => [...prev, { id, playerName }])
+    // Tự động xóa sau 3 giây
+    setTimeout(() => {
+      setFireworks(prev => prev.filter(f => f.id !== id))
+    }, 3000)
+  }
+
+  const checkScoreLimit = (
+    oldTotals: Record<string, number>,
+    newTotals: Record<string, number>,
+    players: Player[],
+    scoreLimit: number | null,
+  ) => {
+    if (scoreLimit === null) return
+    
+    for (const player of players) {
+      const oldScore = oldTotals[player.id] ?? 0
+      const newScore = newTotals[player.id] ?? 0
+      
+      // Kiểm tra nếu điểm mới vượt quá giới hạn và điểm cũ chưa vượt
+      if (oldScore <= scoreLimit && newScore > scoreLimit) {
+        triggerFireworks(player.name)
+      }
+    }
+  }
+
   const handleSaveRound = () => {
     if (!activeRoom) return
 
@@ -346,10 +398,15 @@ export function App() {
       }
 
       updateActiveRoom(room => {
+        const oldTotals = { ...room.totals }
         const nextTotals: Record<string, number> = { ...room.totals }
         for (const d of deltas) {
           nextTotals[d.playerId] = (nextTotals[d.playerId] ?? 0) + d.delta
         }
+        
+        // Kiểm tra giới hạn điểm
+        checkScoreLimit(oldTotals, nextTotals, room.players, room.rules.scoreLimit)
+        
         return {
           ...room,
           totals: nextTotals,
@@ -368,6 +425,7 @@ export function App() {
       const previousLast = activeRoom.rounds[activeRoom.rounds.length - 1]
 
       updateActiveRoom(room => {
+        const oldTotals = { ...room.totals }
         const nextTotals: Record<string, number> = { ...room.totals }
         for (const player of room.players) {
           const oldDelta =
@@ -378,6 +436,9 @@ export function App() {
           nextTotals[player.id] =
             (nextTotals[player.id] ?? 0) - oldDelta + newDelta
         }
+
+        // Kiểm tra giới hạn điểm
+        checkScoreLimit(oldTotals, nextTotals, room.players, room.rules.scoreLimit)
 
         const updatedRounds = [...room.rounds]
         updatedRounds[updatedRounds.length - 1] = {
@@ -416,23 +477,35 @@ export function App() {
               .slice()
               .reverse()
               .map(room => (
-                <button
+                <div
                   key={room.id}
-                  type="button"
                   className={
                     'room-card' +
                     (room.id === activeRoomId ? '' : ' archived')
                   }
-                  onClick={() => {
-                    setActiveRoomId(room.id)
-                    setView('table')
-                  }}
                 >
-                  <div className="room-title">{room.name}</div>
-                  <div className="room-meta">
-                    {room.players.length} người chơi · {room.rounds.length} vòng
-                  </div>
-                </button>
+                  <button
+                    type="button"
+                    className="room-card-content"
+                    onClick={() => {
+                      setActiveRoomId(room.id)
+                      setView('table')
+                    }}
+                  >
+                    <div className="room-title">{room.name}</div>
+                    <div className="room-meta">
+                      {room.players.length} người chơi · {room.rounds.length} vòng
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    className="room-delete-button"
+                    onClick={e => handleDeleteRoom(room.id, e)}
+                    aria-label="Xóa bàn chơi"
+                  >
+                    🗑️
+                  </button>
+                </div>
               ))}
           </section>
         </main>
@@ -600,6 +673,28 @@ export function App() {
                     />
                   </label>
                 </div>
+              </div>
+
+              <div className="score-limit-box">
+                <label className="field-label">
+                  Giới hạn điểm (để trống nếu không giới hạn)
+                  <input
+                    type="number"
+                    className="text-input"
+                    value={rulesInput.scoreLimit ?? ''}
+                    onChange={e => {
+                      const value = e.target.value.trim()
+                      setRulesInput(r => ({
+                        ...r,
+                        scoreLimit: value === '' ? null : Number(value) || null,
+                      }))
+                    }}
+                    placeholder="Ví dụ: 50"
+                  />
+                </label>
+                <p className="score-limit-hint">
+                  Khi ai đó đạt điểm lớn hơn giới hạn này sẽ có pháo bông chúc mừng 🎆
+                </p>
               </div>
             </div>
           </section>
@@ -853,6 +948,34 @@ export function App() {
           </div>
         </div>
       )}
+
+      {/* Component pháo bông */}
+      {fireworks.map(firework => (
+        <Fireworks key={firework.id} playerName={firework.playerName} />
+      ))}
+    </div>
+  )
+}
+
+// Component pháo bông
+function Fireworks({ playerName }: { playerName: string }) {
+  return (
+    <div className="fireworks-container">
+      <div className="fireworks-content">
+        <div className="fireworks-emoji">🎆</div>
+        <div className="fireworks-text">Chúc mừng {playerName}!</div>
+        <div className="fireworks-particles">
+          {Array.from({ length: 20 }).map((_, i) => (
+            <div
+              key={i}
+              className="firework-particle"
+              style={{
+                '--delay': `${i * 0.05}s`,
+              } as React.CSSProperties}
+            />
+          ))}
+        </div>
+      </div>
     </div>
   )
 }
