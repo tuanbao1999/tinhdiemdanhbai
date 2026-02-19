@@ -704,3 +704,76 @@ body {
 button {
   font-family: inherit;
 }
+
+/* Tối ưu hiển thị trên màn hình điện thoại nhỏ */
+@media (max-width: 420px) {
+  .app-root {
+    padding: 8px 8px 72px;
+  }
+
+  .app-header {
+    padding: 6px 2px 12px;
+    gap: 8px;
+  }
+
+  .table-title h1 {
+    font-size: 16px;
+  }
+
+  .subline {
+    font-size: 12px;
+  }
+
+  .ranking-card {
+    padding: 8px 4px;
+    border-radius: 12px;
+  }
+
+  .avatar-circle {
+    width: 28px;
+    height: 28px;
+    font-size: 13px;
+  }
+
+  .ranking-name {
+    font-size: 12px;
+  }
+
+  .ranking-score {
+    font-size: 13px;
+  }
+
+  .history-section {
+    padding: 8px 8px 10px;
+    border-radius: 16px;
+  }
+
+  .round-card {
+    padding: 8px 8px 6px;
+  }
+
+  .score-row {
+    padding: 6px 8px;
+  }
+
+  .add-round-button {
+    width: calc(100% - 16px);
+    bottom: 10px;
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .round-modal,
+  .archive-modal {
+    padding: 8px 10px 14px;
+  }
+
+  .rules-box {
+    padding: 8px 8px 4px;
+  }
+
+  .text-input {
+    font-size: 12px;
+    padding: 6px 8px;
+  }
+}
