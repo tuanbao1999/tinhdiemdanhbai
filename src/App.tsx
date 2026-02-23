@@ -738,7 +738,12 @@ export function App() {
         <section className="ranking-section">
           <p className="section-label">Xếp hạng</p>
           <div className="ranking-list">
-            {room.players.map(player => (
+            {[...room.players]
+              .sort(
+                (a, b) =>
+                  (room.totals[b.id] ?? 0) - (room.totals[a.id] ?? 0),
+              )
+              .map(player => (
               <div key={player.id} className="ranking-card">
                 <div className="avatar-circle">
                   {player.name.trim()[0]?.toUpperCase() ?? '?'}
@@ -852,7 +857,12 @@ export function App() {
             <p className="scores-label">Scores</p>
 
             <div className="scores-list">
-              {room.players.map(player => {
+              {[...room.players]
+                .sort(
+                  (a, b) =>
+                    (room.totals[b.id] ?? 0) - (room.totals[a.id] ?? 0),
+                )
+                .map(player => {
                 const d = draft[player.id]
                 const currentDelta = calculateDeltaForPlayer(player.id)
                 return (
