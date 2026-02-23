@@ -778,7 +778,10 @@ export function App() {
           )}
 
           <div className="round-list">
-            {room.rounds.map(round => (
+            {room.rounds
+              .slice()
+              .reverse()
+              .map(round => (
               <div key={round.id} className="round-card">
                 <div className="round-header">
                   <span className="round-index">{round.id}</span>
